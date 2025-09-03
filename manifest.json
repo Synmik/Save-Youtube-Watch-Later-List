@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Watch Later Sync",
+  "version": "0.5",
+  "description": "Save your YouTube watch later list",
+  "permissions": ["storage", "tabs", "activeTab"],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Save Watch Later",
+    "default_icons": {
+      "16": "YTPlaylistIcon.png",
+      "24": "YTPlaylistIcon.png",
+      "32": "YTPlaylistIcon.png"
+    }
+  },
+  "icons": {
+    "16": "YTPlaylistIcon.png",
+    "48": "YTPlaylistIcon.png",
+    "128": "YTPlaylistIcon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["scraper.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

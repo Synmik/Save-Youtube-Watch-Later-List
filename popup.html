@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Watch Later Sync</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #ff0000;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #cc0000;
+    }
+    #status {
+      margin-top: 10px;
+      color: #333;
+      text-align: center;
+    }
+    #savedList {
+      margin-top: 15px;
+      list-style: none;
+      padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #savedList li {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    #savedList img {
+      max-width: 80px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <button id="saveBtn">Save Watch Later List</button>
+  <div id="status"></div>
+  <ul id="savedList"></ul>
+  <script src="popup.js"></script>
+</body>
+</html>
