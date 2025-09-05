@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Watch Later Sync",
-  "version": "0.5",
-  "description": "Save your YouTube watch later list",
+  "name": "YouTube Watch Later List",
+  "version": "0.7.0",
+  "description": "Save, export, and manage your YouTube watch later list",
   "permissions": ["storage", "tabs", "activeTab"],
   "host_permissions": [
     "https://www.youtube.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Save Watch Later",
+    "default_title": "YouTube Watch Later List",
     "default_icons": {
       "16": "YTPlaylistIcon.png",
       "24": "YTPlaylistIcon.png",

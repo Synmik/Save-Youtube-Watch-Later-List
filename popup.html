@@ -3,53 +3,322 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Watch Later Sync</title>
+  <title>YouTube Watch Later List</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      width: 350px;
-      padding: 10px;
-      font-family: Arial, sans-serif;
+      width: 450px;
+      min-height: 500;
+      padding: 0;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
     }
-    button {
-      width: 100%;
-      padding: 10px;
-      background-color: #ff0000;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
-    button:hover {
-      background-color: #cc0000;
-    }
-    #status {
-      margin-top: 10px;
+
+    .header h1 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
       color: #333;
       text-align: center;
     }
-    #savedList {
-      margin-top: 15px;
-      list-style: none;
-      padding: 0;
+
+    .video-count {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .btn {
+      padding: 10px 8px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: #ff0000;
+      color: white;
+      grid-column: 1 / -1;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #cc0000;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #545b62;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c82333;
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .filters {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .filter-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .status {
+      padding: 10px 5px;
+      text-align: center;
+      font-size: 14px;
+      min-height: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .status-loading {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+
+    .status-warning {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+
+    .content {
+      background: white;
       max-height: 300px;
       overflow-y: auto;
     }
-    #savedList li {
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ddd;
+
+    #savedList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
-    #savedList img {
-      max-width: 80px;
-      margin-top: 5px;
+
+    .video-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      transition: background-color 0.2s ease;
+    }
+
+    .video-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .video-item:last-child {
+      border-bottom: none;
+    }
+
+    .video-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .video-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .video-channel {
+      font-weight: 500;
+      color: #0066cc;
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .video-date {
+      color: #999;
+      white-space: nowrap;
+    }
+
+    .no-videos {
+      padding: 32px 16px;
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #333;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .btn-primary:disabled .loading-spinner {
+      border-top-color: #ccc;
+    }
+
+    /* Scrollbar styling */
+    .content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+
+    .content::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
   </style>
 </head>
 <body>
-  <button id="saveBtn">Save Watch Later List</button>
-  <div id="status"></div>
-  <ul id="savedList"></ul>
+  <div class="header">
+    <h1>YouTube Watch Later List</h1>
+    <div id="videoCount" class="video-count">Loading...</div>
+    
+    <div class="controls">
+      <button id="saveBtn" class="btn btn-primary">
+        <span class="btn-text">Save Watch Later List</span>
+      </button>
+      <button id="exportBtn" class="btn btn-secondary">Export JSON</button>
+      <button id="clearBtn" class="btn btn-danger">Clear All</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-row">
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="form-control" 
+        placeholder="Search videos by title or channel..."
+      >
+    </div>
+    <div class="filter-row">
+      <div class="filter-controls">
+        <select id="sortSelect" class="form-control">
+          <option value="default">Sort by: Default</option>
+          <option value="title">Sort by: Title</option>
+          <option value="channel">Sort by: Channel</option>
+          <option value="date-new">Sort by: Newest</option>
+          <option value="date-old">Sort by: Oldest</option>
+        </select>
+        <select id="filterSelect" class="form-control">
+          <option value="all">All Videos</option>
+          <option value="week">Last Week</option>
+          <option value="month">Last Month</option>
+          <option value="year">Last Year</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+  
+  <div class="content">
+    <ul id="savedList"></ul>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

@@ -2,11 +2,14 @@
 
 A Chrome extension to scrape and save your YouTube watch later playlist entries.
 
+![Preview](Preview/Preview.png)
+
 ## Features
 - Saves video title, channel, upload date
 - Overwrites previous saves on each click
 - No YouTube API or authentication required
 - Stores data locally in Chrome storage
+- Sort, filter, and export list
 
 ## Installation
 1. Clone or download this repository
