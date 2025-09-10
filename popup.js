@@ -151,15 +151,25 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  status.style.display = 'none';
+  
   function showStatus(message, type = 'info') {
+    console.log('DEBUG: showStatus called with message:', message, 'type:', type);
     status.textContent = message;
     status.className = `status-${type}`;
     
+    // Show the status div when there's content
+    if (message) {
+      status.style.display = 'block';
+    }
+    
     if (type === 'success' || type === 'error') {
       setTimeout(() => {
+        console.log('DEBUG: Clearing status message after timeout');
         if (status.textContent === message) {
           status.textContent = '';
           status.className = '';
+          status.style.display = 'none';
         }
       }, 5000);
     }
