@@ -10,8 +10,8 @@
     }
 
     body {
-      width: 450px;
-      min-height: 500;
+      width: 500px;
+      min-height: 520px;
       padding: 0;
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,12 +23,23 @@
       background: rgba(255, 255, 255, 0.95);
       padding: 6px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 4px;
     }
 
     .header h1 {
-      margin: 0 0 4px 0;
+      margin: 0;
       font-size: 18px;
       color: #333;
+      flex: 1;
       text-align: center;
     }
 
@@ -270,11 +281,140 @@
     .content::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
     }
+
+    /* Dark Mode Styles */
+    body.dark-mode {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+
+    .header.dark-mode {
+      background: #2d2d2d;
+      color: #e0e0e0;
+    }
+
+    .header.dark-mode h1 {
+      color: #e0e0e0;
+    }
+
+    .video-count.dark-mode {
+      color: #b0b0b0;
+    }
+
+    .filters.dark-mode {
+      background: #2d2d2d;
+      border-bottom: 1px solid #404040;
+    }
+
+    .form-control.dark-mode {
+      background: #3d3d3d;
+      color: #e0e0e0;
+      border: 1px solid #505050;
+    }
+
+    .form-control.dark-mode:focus {
+      border-color: #4d94ff;
+      box-shadow: 0 0 0 2px rgba(77, 148, 255, 0.25);
+    }
+
+    .content.dark-mode {
+      background: #2d2d2d;
+    }
+
+    .video-item.dark-mode {
+      border-bottom: 1px solid #404040;
+      background-color: #2d2d2d;
+    }
+
+    .video-item.dark-mode:hover {
+      background-color: #3a3a3a;
+    }
+
+    .video-title.dark-mode {
+      color: #e0e0e0;
+    }
+
+    .video-meta.dark-mode {
+      color: #b0b0b0;
+    }
+
+    .video-channel.dark-mode {
+      color: #6d9bff;
+    }
+
+    .video-date.dark-mode {
+      color: #888;
+    }
+
+    .no-videos.dark-mode {
+      color: #b0b0b0;
+    }
+
+    .status.dark-mode {
+      background: #3a3a3a;
+      color: #e0e0e0;
+      border-left-color: #4d94ff;
+    }
+
+    .status-success.dark-mode {
+      background: #2d5a3d;
+      color: #e0f0e0;
+      border-left-color: #28a745;
+    }
+
+    .status-error.dark-mode {
+      background: #5a2d2d;
+      color: #f0e0e0;
+      border-left-color: #dc3545;
+    }
+
+    .status-warning.dark-mode {
+      background: #5a522d;
+      color: #f0f0e0;
+      border-left-color: #ffc107;
+    }
+
+    .status-loading.dark-mode {
+      background: #5a522d;
+      color: #f0f0e0;
+      border-left-color: #ffc107;
+    }
+
+    .theme-toggle-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      margin-left: auto;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .dark-mode .theme-toggle-btn:hover {
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .theme-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>YouTube Watch Later List</h1>
+    <div class="header-content">
+      <h1>YouTube Watch Later List</h1>
+      <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
     <div id="videoCount" class="video-count">Loading...</div>
     
     <div class="controls">

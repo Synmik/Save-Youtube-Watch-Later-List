@@ -8,12 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const sortSelect = document.getElementById('sortSelect');
   const filterSelect = document.getElementById('filterSelect');
+  const themeToggle = document.getElementById('themeToggle');
 
   let allVideos = [];
   let filteredVideos = [];
 
   // Load and display saved list on popup open
   loadSavedVideos();
+  loadTheme();
 
   // Event listeners
   saveBtn.addEventListener('click', handleSaveClick);
@@ -22,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   searchInput.addEventListener('input', applyFiltersAndSort);
   sortSelect.addEventListener('change', applyFiltersAndSort);
   filterSelect.addEventListener('change', applyFiltersAndSort);
+  themeToggle.addEventListener('click', toggleTheme);
 
   async function loadSavedVideos() {
     try {
@@ -32,6 +35,73 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Error loading saved videos:', error);
       showStatus('Error loading saved videos', 'error');
+    }
+  }
+
+  async function loadTheme() {
+    try {
+      const result = await chrome.storage.local.get(['theme']);
+      const theme = result.theme || 'light';
+      console.log('DEBUG: Loading theme from storage:', theme);
+      if (theme === 'dark') {
+        applyDarkMode();
+      } else {
+        applyLightMode();
+      }
+      updateThemeIcon(theme);
+      updateThemeAriaPressed(theme);
+      applyFiltersAndSort();
+    } catch (error) {
+      console.error('Error loading theme:', error);
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    if (newTheme === 'dark') {
+      applyDarkMode();
+    } else {
+      applyLightMode();
+    }
+    
+    updateThemeIcon(newTheme);
+    updateThemeAriaPressed(newTheme);
+    
+    // Save theme preference
+    chrome.storage.local.set({ 'theme': newTheme });
+    
+    applyFiltersAndSort();
+  }
+
+  function updateThemeAriaPressed(theme) {
+    const toggleButton = document.getElementById('themeToggle');
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-pressed', theme === 'dark');
+    }
+  }
+
+  function applyDarkMode() {
+    document.body.classList.add('dark-mode');
+    document.querySelector('.header').classList.add('dark-mode');
+    document.querySelector('.filters').classList.add('dark-mode');
+    document.querySelectorAll('.form-control').forEach(input => input.classList.add('dark-mode'));
+    document.querySelector('.content').classList.add('dark-mode');
+  }
+
+  function applyLightMode() {
+    document.body.classList.remove('dark-mode');
+    document.querySelector('.header').classList.remove('dark-mode');
+    document.querySelector('.filters').classList.remove('dark-mode');
+    document.querySelectorAll('.form-control').forEach(input => input.classList.remove('dark-mode'));
+    document.querySelector('.content').classList.remove('dark-mode');
+  }
+
+  function updateThemeIcon(theme) {
+    const icon = themeToggle.querySelector('.theme-icon');
+    if (icon) {
+      icon.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
   }
 
@@ -324,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Function to display the saved video list in the popup
+  // Display the saved video list in the popup
   function displayList(videos) {
     const list = document.getElementById('savedList');
     list.innerHTML = '';
@@ -337,26 +407,45 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const isDarkMode = document.body.classList.contains('dark-mode') || 
+                      (document.body.style.backgroundColor === 'rgb(26, 26, 26)' || 
+                       document.body.style.backgroundColor === '#1a1a1a');
+
     videos.forEach((video, index) => {
       const li = document.createElement('li');
       li.className = 'video-item';
+      if (isDarkMode) {
+        li.classList.add('dark-mode');
+      }
 
       const titleEl = document.createElement('div');
       titleEl.className = 'video-title';
       titleEl.textContent = video.title;
+      if (isDarkMode) {
+        titleEl.classList.add('dark-mode');
+      }
       li.appendChild(titleEl);
 
       const metaEl = document.createElement('div');
       metaEl.className = 'video-meta';
+      if (isDarkMode) {
+        metaEl.classList.add('dark-mode');
+      }
       
       const channelEl = document.createElement('span');
       channelEl.className = 'video-channel';
       channelEl.textContent = video.channel;
+      if (isDarkMode) {
+        channelEl.classList.add('dark-mode');
+      }
       metaEl.appendChild(channelEl);
 
       const dateEl = document.createElement('span');
       dateEl.className = 'video-date';
       dateEl.textContent = video.date;
+      if (isDarkMode) {
+        dateEl.classList.add('dark-mode');
+      }
       metaEl.appendChild(dateEl);
 
       li.appendChild(metaEl);
