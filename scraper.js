@@ -6,16 +6,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
       // Validate page context
       validatePageContext();
-      
+
       // Wait for page to be fully loaded
       await waitForPageLoad();
-      
+
       // Scrape videos with retry mechanism
       const videos = await scrapeVideosWithRetry();
-      
+
       console.log(`Successfully scraped ${videos.length} videos`);
       sendResponse({ videos });
-      
+
     } catch (error) {
       console.error('Scraping error:', error);
       sendResponse({ error: error.message });
@@ -36,7 +36,7 @@ function validatePageContext() {
   }
 }
 
-async function waitForPageLoad(maxWait = 10000) {
+async function waitForPageLoad(maxWait = 3000) {
   const startTime = Date.now();
   
   while (Date.now() - startTime < maxWait) {
