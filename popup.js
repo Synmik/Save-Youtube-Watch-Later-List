@@ -423,9 +423,12 @@ document.addEventListener('DOMContentLoaded', () => {
         li.classList.add('modified');
       }
 
-      const titleEl = document.createElement('div');
+      const titleEl = document.createElement('a');
       titleEl.className = 'video-title';
       titleEl.textContent = video.title;
+      titleEl.href = `https://youtube.com/watch?v=${video.id}`;
+      titleEl.target = '_blank';
+      titleEl.rel = 'noopener noreferrer';
       if (isDarkMode) {
         titleEl.classList.add('dark-mode');
       }
