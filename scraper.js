@@ -11,10 +11,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       await waitForPageLoad();
 
       // Scrape videos with retry mechanism
-      const videos = await scrapeVideosWithRetry();
+      const newVideos = await scrapeVideosWithRetry();
 
-      console.log(`Successfully scraped ${videos.length} videos`);
-      sendResponse({ videos });
+      // Load previous entries from storage
+      const storedResult = await chrome.storage.local.get(['watchLater']);
+      const storedVideos = storedResult.watchLater || [];
+
+      // Create map of stored videos by title + channel for fast lookup
+      const storedMap = new Map();
+      for (const video of storedVideos) {
+        const key = `${video.title}||${video.channel}`;
+        storedMap.set(key, video);
+      }
+
+      // Compare and flag changes
+      const flaggedVideos = newVideos.map(video => {
+        const key = `${video.title}||${video.channel}`;
+        const storedVideo = storedMap.get(key);
+        
+        if (storedVideo) {
+          // Video exists but may have changed
+          if (
+            video.title !== storedVideo.title ||
+            video.channel !== storedVideo.channel ||
+            video.date !== storedVideo.date
+          ) {
+            return { ...video, status: 'modified' };
+          }
+        } else {
+          // New video
+        }
+        
+        return video;
+      });
+
+      // Also mark videos that were in storage but are now gone as deleted
+      const deletedVideos = storedVideos.filter(storedVideo => {
+        const key = `${storedVideo.title}||${storedVideo.channel}`;
+        return !newVideos.some(newVideo =>
+          newVideo.title === storedVideo.title &&
+          newVideo.channel === storedVideo.channel
+        );
+      }).map(video => ({ ...video, status: 'deleted' }));
+
+      // Combine all videos: new/modified + deleted
+      const finalVideos = [...flaggedVideos, ...deletedVideos];
+
+      // Save updated list to storage (includes deleted entries for history)
+      await chrome.storage.local.set({ 'watchLater': newVideos });
+
+      console.log(`Successfully scraped ${finalVideos.length} videos (${newVideos.length} current, ${deletedVideos.length} deleted)`);
+      sendResponse({ videos: finalVideos });
 
     } catch (error) {
       console.error('Scraping error:', error);
@@ -36,7 +83,7 @@ function validatePageContext() {
   }
 }
 
-async function waitForPageLoad(maxWait = 3000) {
+async function waitForPageLoad(maxWait = 1000) { // Time before update
   const startTime = Date.now();
   
   while (Date.now() - startTime < maxWait) {

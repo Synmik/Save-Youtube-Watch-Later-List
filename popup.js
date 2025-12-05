@@ -407,8 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const isDarkMode = document.body.classList.contains('dark-mode') || 
-                      (document.body.style.backgroundColor === 'rgb(26, 26, 26)' || 
+    const isDarkMode = document.body.classList.contains('dark-mode') ||
+                      (document.body.style.backgroundColor === 'rgb(26, 26, 26)' ||
                        document.body.style.backgroundColor === '#1a1a1a');
 
     videos.forEach((video, index) => {
@@ -416,6 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
       li.className = 'video-item';
       if (isDarkMode) {
         li.classList.add('dark-mode');
+      }
+
+      // Apply red styling for modified or deleted videos
+      if (video.status === 'modified' || video.status === 'deleted') {
+        li.classList.add('modified');
       }
 
       const titleEl = document.createElement('div');
