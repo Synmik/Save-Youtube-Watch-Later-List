@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   sortSelect.addEventListener('change', applyFiltersAndSort);
   filterSelect.addEventListener('change', applyFiltersAndSort);
   themeToggle.addEventListener('click', toggleTheme);
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('jsonFileInput').click());
+  document.getElementById('jsonFileInput').addEventListener('change', handleImportFile);
 
   async function loadSavedVideos() {
     try {
@@ -351,10 +353,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const exportData = {
         exportDate: new Date().toISOString(),
         totalVideos: allVideos.length,
-        videos: allVideos
+        videos: allVideos.map(video => ({
+          id: video.id,
+          title: video.title,
+          channel: video.channel,
+          date: video.date
+        }))
       };
 
       const dataStr = JSON.stringify(exportData, null, 2);
+      
+      // Ensure export structure matches import expectations
+      exportData.videos = exportData.videos.map(video => ({
+        id: video.id,
+        title: video.title,
+        channel: video.channel,
+        date: video.date
+      }));
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       
       const url = URL.createObjectURL(dataBlob);
@@ -418,11 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
         li.classList.add('dark-mode');
       }
 
-      // Apply red styling for modified or deleted videos
-      if (video.status === 'modified' || video.status === 'deleted') {
-        li.classList.add('modified');
-      }
-
       const titleEl = document.createElement('a');
       titleEl.className = 'video-title';
       titleEl.textContent = video.title;
@@ -459,5 +469,47 @@ document.addEventListener('DOMContentLoaded', () => {
       li.appendChild(metaEl);
       list.appendChild(li);
     });
+  }
+
+  async function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target.result;
+        const data = JSON.parse(content);
+
+        // Validate structure
+        if (!data.videos || !Array.isArray(data.videos)) {
+          throw new Error('Invalid JSON format: missing or invalid "videos" array');
+        }
+
+        // Optional: validate required fields in each video
+        for (const video of data.videos) {
+          if (!video.id || !video.title || !video.channel || !video.date) {
+            throw new Error('Invalid video entry: missing required fields (id, title, channel, date)');
+          }
+        }
+
+        // Update state and UI
+        allVideos = data.videos;
+        await chrome.storage.local.set({ 'watchLater': allVideos });
+        updateVideoCount();
+        applyFiltersAndSort();
+        showStatus(`Successfully imported ${data.videos.length} videos!`, 'success');
+
+      } catch (error) {
+        console.error('Import error:', error);
+        showStatus('Import failed: ' + error.message, 'error');
+      }
+    };
+
+    reader.onerror = () => {
+      showStatus('Failed to read file', 'error');
+    };
+
+    reader.readAsText(file);
   }
 });
