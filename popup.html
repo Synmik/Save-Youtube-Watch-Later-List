@@ -10,7 +10,7 @@
     }
 
     body {
-      width: 500px;
+      width: 600px;
       min-height: 520px;
       padding: 0;
       margin: 0;
@@ -51,10 +51,9 @@
     }
 
     .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       gap: 4px;
-      margin-bottom: 2px;
+      margin-bottom: 5px;
     }
 
     .btn {
@@ -62,19 +61,20 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       transition: all 0.2s ease;
       text-align: center;
       text-decoration: none;
       display: inline-block;
+      flex: 1;
     }
 
     .btn-primary {
       background: #ff0000;
       color: white;
       font-weight: 700;
-      grid-column: 1 / -1;
+      flex-grow: 3;
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -210,9 +210,11 @@
       margin-bottom: 8px;
       line-height: 1.4;
       display: -webkit-box;
+      line-clamp: 2;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      text-decoration: none;
     }
 
     .video-meta {
@@ -419,16 +421,16 @@
     
     <div class="controls">
       <button id="saveBtn" class="btn btn-primary">
-        <span class="btn-text">Save Watch Later List</span>
+        <span class="btn-text">💾 Save Watch Later List</span>
       </button>
-      <button id="exportBtn" class="btn btn-secondary">Export JSON</button>
-      <button id="clearBtn" class="btn btn-danger">Clear All</button>
+      <button id="clearBtn" class="btn btn-danger">🗑️ Clear All</button>
+    </div>
+      <div class="controls">
+      <button id="importBtn" class="btn btn-secondary">🔼 Import JSON</button>
+      <button id="exportBtn" class="btn btn-secondary">🔽 Export JSON</button>
     </div>
   </div>
 
-  <div class="controls">
-    <button id="importBtn" class="btn btn-secondary">Import JSON</button>
-  </div>
 
   <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
 
