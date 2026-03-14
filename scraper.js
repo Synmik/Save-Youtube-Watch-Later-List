@@ -163,15 +163,31 @@ function extractVideoData(videoElement, index) {
     const dateElement = findElementBySelectors(videoElement, dateSelectors);
     const date = dateElement ? dateElement.textContent.trim() : 'Unknown Date';
 
-    // Extract video ID for potential future use
+    // Extract video ID for thumbnail and URL
     const linkElement = titleElement || videoElement.querySelector('a[href*="/watch"]');
     const videoId = linkElement ? extractVideoId(linkElement.href) : null;
+
+    // Extract thumbnail URL (YouTube provides multiple sizes)
+    const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : null;
+
+    // Extract duration from various possible selectors
+    const durationSelectors = [
+      '#meta .ytd-thumbnail-overlay-time-status-renderer',
+      '.ytd-thumbnail-overlay-time-status-renderer #text',
+      'ytd-thumbnail-overlay-time-status-renderer span',
+      '[class*="time-status"]',
+      '.yt-simple-endpoint.style-scope.ytd-playlist-video-renderer + .ytd-thumbnail-overlay-time-status-renderer'
+    ];
+    const durationElement = findElementBySelectors(videoElement, durationSelectors);
+    const duration = durationElement ? durationElement.textContent.trim() : null;
 
     return {
       title,
       channel,
       date,
       ...(videoId && { id: videoId }),
+      ...(thumbnailUrl && { thumbnail: thumbnailUrl }),
+      ...(duration && { duration }),
       scrapedAt: new Date().toISOString()
     };
   } catch (error) {

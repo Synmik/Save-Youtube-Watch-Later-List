@@ -357,7 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
           id: video.id,
           title: video.title,
           channel: video.channel,
-          date: video.date
+          date: video.date,
+          ...(video.thumbnail && { thumbnail: video.thumbnail }),
+          ...(video.duration && { duration: video.duration })
         }))
       };
 
@@ -368,7 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
         id: video.id,
         title: video.title,
         channel: video.channel,
-        date: video.date
+        date: video.date,
+        ...(video.thumbnail && { thumbnail: video.thumbnail }),
+        ...(video.duration && { duration: video.duration })
       }));
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       
@@ -433,6 +437,39 @@ document.addEventListener('DOMContentLoaded', () => {
         li.classList.add('dark-mode');
       }
 
+      // Create thumbnail container
+      const thumbnailWrapper = document.createElement('div');
+      thumbnailWrapper.className = 'thumbnail-wrapper';
+      if (isDarkMode) {
+        thumbnailWrapper.classList.add('dark-mode');
+      }
+
+      const thumbnailEl = document.createElement('img');
+      thumbnailEl.className = 'video-thumbnail';
+      if (isDarkMode) {
+        thumbnailEl.classList.add('dark-mode');
+      }
+      thumbnailEl.src = video.thumbnail || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="68"><rect fill="%23f0f0f0" width="120" height="68"/><text x="50%" y="50%" font-family="Arial" font-size="10" fill="%23999" text-anchor="middle" dy=".3em">No Preview</text></svg>';
+      thumbnailEl.alt = video.title;
+      thumbnailEl.onerror = () => {
+        thumbnailEl.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="68"><rect fill="%23f0f0f0" width="120" height="68"/><text x="50%" y="50%" font-family="Arial" font-size="10" fill="%23999" text-anchor="middle" dy=".3em">No Preview</text></svg>';
+      };
+      thumbnailWrapper.appendChild(thumbnailEl);
+
+      // Add duration badge if available
+      if (video.duration) {
+        const durationBadge = document.createElement('span');
+        durationBadge.className = 'video-duration';
+        durationBadge.textContent = video.duration;
+        thumbnailWrapper.appendChild(durationBadge);
+      }
+
+      li.appendChild(thumbnailWrapper);
+
+      // Create video info container
+      const videoInfo = document.createElement('div');
+      videoInfo.className = 'video-info';
+
       const titleEl = document.createElement('a');
       titleEl.className = 'video-title';
       titleEl.textContent = video.title;
@@ -442,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isDarkMode) {
         titleEl.classList.add('dark-mode');
       }
-      li.appendChild(titleEl);
+      videoInfo.appendChild(titleEl);
 
       const metaEl = document.createElement('div');
       metaEl.className = 'video-meta';
@@ -466,7 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       metaEl.appendChild(dateEl);
 
-      li.appendChild(metaEl);
+      videoInfo.appendChild(metaEl);
+      li.appendChild(videoInfo);
       list.appendChild(li);
     });
   }
@@ -492,6 +530,12 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Invalid video entry: missing required fields (id, title, channel, date)');
           }
         }
+
+        // Add thumbnail and duration if not present (for backward compatibility)
+        allVideos = data.videos.map(video => ({
+          ...video,
+          ...(video.id && !video.thumbnail && { thumbnail: `https://img.youtube.com/vi/${video.id}/default.jpg` })
+        }));
 
         // Update state and UI
         allVideos = data.videos;
