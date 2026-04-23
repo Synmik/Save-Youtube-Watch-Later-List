@@ -1,4 +1,14 @@
 // Content script to scrape YouTube watch later list
+
+// Configuration constants
+const CONFIG = {
+  MAX_RETRIES: 3,
+  PAGE_LOAD_TIMEOUT: 1000,
+  PAGE_LOAD_POLL_INTERVAL: 500,
+  RETRY_BASE_DELAY: 1000,
+  NAVIGATION_CHECK_INTERVAL: 1000,
+};
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action !== 'scrape') return;
 
@@ -35,7 +45,7 @@ function validatePageContext() {
   }
 }
 
-async function waitForPageLoad(maxWait = 1000) { // Time before update
+async function waitForPageLoad(maxWait = CONFIG.PAGE_LOAD_TIMEOUT) {
   const startTime = Date.now();
   
   while (Date.now() - startTime < maxWait) {
@@ -54,7 +64,7 @@ async function waitForPageLoad(maxWait = 1000) { // Time before update
       return; // Empty playlist is a valid state
     }
     
-    await delay(500);
+    await delay(CONFIG.PAGE_LOAD_POLL_INTERVAL);
   }
   
   // Final check - if we have any videos, proceed
@@ -64,7 +74,7 @@ async function waitForPageLoad(maxWait = 1000) { // Time before update
   }
 }
 
-async function scrapeVideosWithRetry(maxRetries = 3) {
+async function scrapeVideosWithRetry(maxRetries = CONFIG.MAX_RETRIES) {
   let lastError;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -82,7 +92,7 @@ async function scrapeVideosWithRetry(maxRetries = 3) {
       console.warn(`Scraping attempt ${attempt} failed:`, error.message);
       
       if (attempt < maxRetries) {
-        await delay(1000 * attempt); // Progressive delay
+        await delay(CONFIG.RETRY_BASE_DELAY * attempt); // Progressive delay
       }
     }
   }
@@ -234,11 +244,22 @@ window.addEventListener('error', (event) => {
   console.error('Page error that might affect scraping:', event.error);
 });
 
-// Monitor for YouTube navigation changes
-let lastUrl = window.location.href;
-setInterval(() => {
-  if (window.location.href !== lastUrl) {
-    lastUrl = window.location.href;
-    console.log('YouTube navigation detected:', lastUrl);
+// Monitor for YouTube navigation changes using MutationObserver (efficient, event-driven)
+// YouTube updates the document title on navigation, so we observe <head> changes
+const titleObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+      console.log('YouTube navigation detected:', window.location.href);
+    }
   }
-}, 1000);
+});
+titleObserver.observe(document.head || document.documentElement, {
+  childList: true,
+  subtree: true,
+  characterData: true
+});
+
+// Also listen for popstate (SPA navigation via back/forward buttons)
+window.addEventListener('popstate', () => {
+  console.log('YouTube SPA navigation (popstate):', window.location.href);
+});

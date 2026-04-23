@@ -1,4 +1,22 @@
 // Popup script
+
+// Configuration constants
+const CONFIG = {
+  MAX_RETRIES: 3,
+  TAB_QUERY_TIMEOUT: 5000,
+  SCRAPE_MESSAGE_TIMEOUT: 10000,
+  RETRY_DELAY_EMPTY: 2000,
+  RETRY_DELAY_ERROR: 1000,
+  STATUS_AUTO_CLEAR_DELAY: 5000,
+  WEEK_DAYS: 7,
+  MONTH_MONTHS: 1,
+  YEAR_YEARS: 1,
+  MS_PER_MINUTE: 60000,
+  MS_PER_HOUR: 3600000,
+  MS_PER_DAY: 86400000,
+  MS_PER_WEEK: 604800000,
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveBtn');
   const exportBtn = document.getElementById('exportBtn');
@@ -44,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const result = await chrome.storage.local.get(['theme']);
       const theme = result.theme || 'light';
-      console.log('DEBUG: Loading theme from storage:', theme);
       if (theme === 'dark') {
         applyDarkMode();
       } else {
@@ -108,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleSaveClick() {
-    const maxRetries = 3;
+    const maxRetries = CONFIG.MAX_RETRIES;
     let attempt = 0;
     
     while (attempt < maxRetries) {
@@ -118,18 +135,18 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBtn.disabled = true;
 
         // Get active tab with timeout
-        const tab = await getActiveTabWithTimeout(5000);
+        const tab = await getActiveTabWithTimeout(CONFIG.TAB_QUERY_TIMEOUT);
         validateTab(tab);
 
         // Send message to content script with timeout
-        const response = await sendMessageToTabWithTimeout(tab.id, { action: 'scrape' }, 10000);
+        const response = await sendMessageToTabWithTimeout(tab.id, { action: 'scrape' }, CONFIG.SCRAPE_MESSAGE_TIMEOUT);
         validateScrapingResponse(response);
 
         const { videos } = response;
         if (videos.length === 0) {
           showStatus('No videos found in watch later list. The page might still be loading.', 'warning');
           if (attempt < maxRetries) {
-            await delay(2000);
+            await delay(CONFIG.RETRY_DELAY_EMPTY);
             continue;
           }
           return;
@@ -150,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showStatus(`Failed after ${maxRetries} attempts: ${error.message}`, 'error');
         } else {
           showStatus(`Attempt ${attempt} failed, retrying... (${error.message})`, 'warning');
-          await delay(1000);
+          await delay(CONFIG.RETRY_DELAY_ERROR);
         }
       }
     }
@@ -226,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
   status.style.display = 'none';
   
   function showStatus(message, type = 'info') {
-    console.log('DEBUG: showStatus called with message:', message, 'type:', type);
+    //console.log('DEBUG: showStatus called with message:', message, 'type:', type);
     status.textContent = message;
     status.className = `status-${type}`;
     
@@ -243,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
           status.className = '';
           status.style.display = 'none';
         }
-      }, 5000);
+      }, CONFIG.STATUS_AUTO_CLEAR_DELAY);
     }
   }
 
@@ -272,13 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       switch (filterValue) {
         case 'week':
-          cutoffDate.setDate(now.getDate() - 7);
+          cutoffDate.setDate(now.getDate() - CONFIG.WEEK_DAYS);
           break;
         case 'month':
-          cutoffDate.setMonth(now.getMonth() - 1);
+          cutoffDate.setMonth(now.getMonth() - CONFIG.MONTH_MONTHS);
           break;
         case 'year':
-          cutoffDate.setFullYear(now.getFullYear() - 1);
+          cutoffDate.setFullYear(now.getFullYear() - CONFIG.YEAR_YEARS);
           break;
       }
       
@@ -315,16 +332,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dateStr.includes('ago')) {
       if (dateStr.includes('minute')) {
         const minutes = parseInt(dateStr.match(/\d+/)?.[0] || '0');
-        return new Date(now.getTime() - minutes * 60000);
+        return new Date(now.getTime() - minutes * CONFIG.MS_PER_MINUTE);
       } else if (dateStr.includes('hour')) {
         const hours = parseInt(dateStr.match(/\d+/)?.[0] || '0');
-        return new Date(now.getTime() - hours * 3600000);
+        return new Date(now.getTime() - hours * CONFIG.MS_PER_HOUR);
       } else if (dateStr.includes('day')) {
         const days = parseInt(dateStr.match(/\d+/)?.[0] || '0');
-        return new Date(now.getTime() - days * 86400000);
+        return new Date(now.getTime() - days * CONFIG.MS_PER_DAY);
       } else if (dateStr.includes('week')) {
         const weeks = parseInt(dateStr.match(/\d+/)?.[0] || '0');
-        return new Date(now.getTime() - weeks * 604800000);
+        return new Date(now.getTime() - weeks * CONFIG.MS_PER_WEEK);
       } else if (dateStr.includes('month')) {
         const months = parseInt(dateStr.match(/\d+/)?.[0] || '0');
         const date = new Date(now);
@@ -532,10 +549,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Add thumbnail and duration if not present (for backward compatibility)
-        allVideos = data.videos.map(video => ({
-          ...video,
-          ...(video.id && !video.thumbnail && { thumbnail: `https://img.youtube.com/vi/${video.id}/default.jpg` })
-        }));
+        //allVideos = data.videos.map(video => ({
+        //  ...video,
+        //  ...(video.id && !video.thumbnail && { thumbnail: `https://img.youtube.com/vi/${video.id}/default.jpg` })
+        //}));
 
         // Update state and UI
         allVideos = data.videos;
