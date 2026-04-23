@@ -253,6 +253,7 @@
 
     .video-channel {
       font-weight: 500;
+      font-size: 14px;
       color: #0066cc;
       max-width: 60%;
       overflow: hidden;
@@ -309,22 +310,44 @@
       border-top-color: #ccc;
     }
 
-    /* Scrollbar styling */
+    /* Scrollbar styling - Light Theme */
     .content::-webkit-scrollbar {
-      width: 14px;
+      width: 15px;
     }
 
     .content::-webkit-scrollbar-track {
       background: #f1f1f1;
+      border-radius: 4px;
     }
 
     .content::-webkit-scrollbar-thumb {
       background: #c1c1c1;
-      border-radius: 3px;
+      border-radius: 4px;
+      border: 2px solid #f1f1f1;
     }
 
     .content::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
+    }
+
+    /* Scrollbar styling - Dark Theme */
+    .dark-mode .content::-webkit-scrollbar {
+      width: 15px;
+    }
+
+    .dark-mode .content::-webkit-scrollbar-track {
+      background: #2a2a2a;
+      border-radius: 4px;
+    }
+
+    .dark-mode .content::-webkit-scrollbar-thumb {
+      background: #555555;
+      border-radius: 4px;
+      border: 2px solid #2a2a2a;
+    }
+
+    .dark-mode .content::-webkit-scrollbar-thumb:hover {
+      background: #666666;
     }
 
     /* Dark Mode Styles */
@@ -427,11 +450,6 @@
 
     .video-thumbnail.dark-mode {
       background: #3d3d3d;
-    }
-
-    .thumbnail-wrapper.dark-mode .video-duration {
-      background: rgba(255, 255, 255, 0.9);
-      color: #1a1a1a;
     }
 
     .theme-toggle-btn {

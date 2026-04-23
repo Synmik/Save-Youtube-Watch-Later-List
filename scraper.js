@@ -100,33 +100,94 @@ async function scrapeVideosWithRetry(maxRetries = CONFIG.MAX_RETRIES) {
   throw new Error(`Scraping failed after ${maxRetries} attempts: ${lastError.message}`);
 }
 
+async function loadAllPlaylistVideos(maxScrolls = 50, scrollDelay = 400) {
+  /**
+   * Scrolls through the YouTube playlist to trigger loading of all videos.
+   * YouTube uses infinite scrolling — new videos are loaded as you scroll down.
+   * This function scrolls to the bottom, waits for content to load, and repeats
+   * until no new videos are loaded or maxScrolls is reached.
+   *
+   * @param {number} maxScrolls - Maximum number of scroll iterations (default 50)
+   * @param {number} scrollDelay - Delay in ms between scrolls to allow rendering (default 400)
+   * @returns {Promise<void>} Resolves when all videos are loaded
+   */
+  let previousCount = 0;
+  let stagnantIterations = 0;
+  const STAGNANT_THRESHOLD = 3; // Stop if no new videos after this many iterations
+
+  for (let i = 0; i < maxScrolls; i++) {
+    const currentCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
+
+    // Scroll to the bottom of the playlist
+    const scrollContainer = document.querySelector('ytd-playlist-renderer, ytd-playlist-video-list-renderer, #content');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'auto' });
+    } else {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // Wait for new videos to render
+    await delay(scrollDelay);
+
+    const newCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
+
+    if (newCount === previousCount) {
+      stagnantIterations++;
+      if (stagnantIterations >= STAGNANT_THRESHOLD) {
+        console.log(`No new videos loaded after ${stagnantIterations} iterations. All videos loaded.`);
+        break;
+      }
+    } else {
+      stagnantIterations = 0;
+      console.log(`Loaded ${newCount} videos (was ${previousCount})`);
+    }
+
+    previousCount = newCount;
+  }
+
+  // Final scroll to top to restore original view
+  const scrollContainer = document.querySelector('ytd-playlist-renderer, ytd-playlist-video-list-renderer, #content');
+  if (scrollContainer) {
+    scrollContainer.scrollTo({ top: 0, behavior: 'auto' });
+  } else {
+    window.scrollTo(0, 0);
+  }
+
+  console.log(`Total videos loaded: ${document.querySelectorAll('ytd-playlist-video-renderer').length}`);
+}
+
 async function scrapeVideos() {
   const videos = [];
+
+  // First, ensure all playlist videos are loaded by scrolling through the page
+  console.log('Loading all playlist videos by scrolling...');
+  await loadAllPlaylistVideos();
+
   const videoElements = document.querySelectorAll('ytd-playlist-video-renderer');
-  
+
   if (videoElements.length === 0) {
     throw new Error('No video elements found. The page might still be loading.');
   }
-  
+
   console.log(`Found ${videoElements.length} video elements`);
-  
+
   for (let i = 0; i < videoElements.length; i++) {
     try {
       const video = videoElements[i];
       const videoData = extractVideoData(video, i);
-      
+
       // Validate required fields
       if (!videoData.title || videoData.title === 'Unknown') {
         console.warn(`Video ${i + 1}: Could not extract title`);
       }
-      
+
       videos.push(videoData);
     } catch (error) {
       console.warn(`Error processing video ${i + 1}:`, error);
       // Continue with other videos even if one fails
     }
   }
-  
+
   return videos;
 }
 
