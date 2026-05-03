@@ -9,20 +9,91 @@
       box-sizing: border-box;
     }
 
+    /* CSS Custom Properties - Light Theme */
+    :root {
+      --bg-primary: rgba(230, 230, 230, 0.95);
+      --bg-secondary: rgba(230, 230, 230, 0.95);
+      --bg-hover: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --text-link: #0066cc;
+      --border-color: rgba(0, 0, 0, 0.1);
+      --border-light: #eeeeee;
+      --input-bg: #f0f0f0;
+      --input-border: #dddddd;
+      --input-focus-border: #007bff;
+      --input-focus-shadow: rgba(0, 123, 255, 0.25);
+      --thumbnail-bg: #f0f0f0;
+      --scrollbar-track: #f1f1f1;
+      --scrollbar-thumb: #c1c1c1;
+      --scrollbar-thumb-hover: #a8a8a8;
+      --status-loading-bg: #fff3cd;
+      --status-loading-text: #856404;
+      --status-loading-border: #ffc107;
+      --status-success-bg: #d4edda;
+      --status-success-text: #155724;
+      --status-success-border: #28a745;
+      --status-error-bg: #f8d7da;
+      --status-error-text: #721c24;
+      --status-error-border: #dc3545;
+      --status-warning-bg: #fff3cd;
+      --status-warning-text: #856404;
+      --status-warning-border: #ffc107;
+      --theme-toggle-hover: rgba(255, 255, 255, 0.2);
+    }
+
+    /* CSS Custom Properties - Dark Theme */
+    body.dark-mode {
+      --bg-primary: #2d2d2d; /*#1a1a1a */
+      --bg-secondary: #2d2d2d;
+      --bg-hover: #3a3a3a;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --text-muted: #888888;
+      --text-link: #6d9bff;
+      --border-color: #404040;
+      --border-light: #404040;
+      --input-bg: #3d3d3d;
+      --input-border: #505050;
+      --input-focus-border: #4d94ff;
+      --input-focus-shadow: rgba(77, 148, 255, 0.25);
+      --thumbnail-bg: #3d3d3d;
+      --scrollbar-track: #2a2a2a;
+      --scrollbar-thumb: #555555;
+      --scrollbar-thumb-hover: #666666;
+      --status-loading-bg: #5a522d;
+      --status-loading-text: #f0f0e0;
+      --status-loading-border: #ffc107;
+      --status-success-bg: #2d5a3d;
+      --status-success-text: #e0f0e0;
+      --status-success-border: #28a745;
+      --status-error-bg: #5a2d2d;
+      --status-error-text: #f0e0e0;
+      --status-error-border: #dc3545;
+      --status-warning-bg: #5a522d;
+      --status-warning-text: #f0f0e0;
+      --status-warning-border: #ffc107;
+      --theme-toggle-hover: rgba(0, 0, 0, 0.4);
+    }
+
     body {
       width: 600px;
-      min-height: 520px;
+      height: 600px;
+      min-height: 600px;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
       padding: 0;
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: rgba(255, 255, 255, 0.95);
-      color: #333;
+      background: var(--bg-primary);
+      color: var(--text-primary);
     }
 
     .header {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--bg-primary);
       padding: 6px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
     }
@@ -38,7 +109,7 @@
     .header h1 {
       margin: 0;
       font-size: 18px;
-      color: #333;
+      color: var(--text-primary);
       flex: 1;
       text-align: center;
     }
@@ -46,7 +117,7 @@
     .video-count {
       text-align: center;
       font-size: 14px;
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 8px;
     }
 
@@ -66,8 +137,26 @@
       transition: all 0.2s ease;
       text-align: center;
       text-decoration: none;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       flex: 1;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .btn-primary svg {
+      fill: white;
+    }
+
+    .btn-secondary svg,
+    .btn-danger svg {
+      fill: white;
     }
 
     .btn-primary {
@@ -109,9 +198,9 @@
     }
 
     .filters {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--bg-secondary);
       padding: 6px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid var(--border-color);
     }
 
     .filter-row {
@@ -131,19 +220,53 @@
       gap: 8px;
     }
 
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      line-height: 1;
+      display: none;
+      transition: color 0.2s ease;
+    }
+
+    .search-clear-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .search-clear-btn.visible {
+      display: block;
+    }
+
     .form-control {
       width: 100%;
       padding: 8px 8px;
-      border: 1px solid #ddd;
+      background: var(--input-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--input-border);
       border-radius: 4px;
       font-size: 14px;
       transition: border-color 0.2s ease;
     }
 
+    .search-input {
+      padding-right: 32px;
+    }
+
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      border-color: var(--input-focus-border);
+      box-shadow: 0 0 0 2px var(--input-focus-shadow);
     }
 
     .status {
@@ -155,32 +278,32 @@
     }
 
     .status-loading {
-      background: #fff3cd;
-      color: #856404;
-      border-left: 4px solid #ffc107;
+      background: var(--status-loading-bg);
+      color: var(--status-loading-text);
+      border-left: 4px solid var(--status-loading-border);
     }
 
     .status-success {
-      background: #d4edda;
-      color: #155724;
-      border-left: 4px solid #28a745;
+      background: var(--status-success-bg);
+      color: var(--status-success-text);
+      border-left: 4px solid var(--status-success-border);
     }
 
     .status-error {
-      background: #f8d7da;
-      color: #721c24;
-      border-left: 4px solid #dc3545;
+      background: var(--status-error-bg);
+      color: var(--status-error-text);
+      border-left: 4px solid var(--status-error-border);
     }
 
     .status-warning {
-      background: #fff3cd;
-      color: #856404;
-      border-left: 4px solid #ffc107;
+      background: var(--status-warning-bg);
+      color: var(--status-warning-text);
+      border-left: 4px solid var(--status-warning-border);
     }
 
     .content {
-      background: white;
-      max-height: 300px;
+      background: var(--bg-secondary);
+      /* max-height: 380px; */
       overflow-y: auto;
     }
 
@@ -192,7 +315,7 @@
 
     .video-item {
       padding: 10px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border-light);
       transition: background-color 0.2s ease;
       display: flex;
       gap: 2px;
@@ -200,7 +323,7 @@
     }
 
     .video-item:hover {
-      background-color: #f8f9fa;
+      background-color: var(--bg-hover);
     }
 
     .video-item:last-child {
@@ -213,7 +336,7 @@
       height: 75px;
       border-radius: 3px;
       overflow: hidden;
-      background: #f0f0f0;
+      background: var(--thumbnail-bg);
     }
 
     .video-thumbnail img {
@@ -229,7 +352,7 @@
 
     .video-title {
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 10px;
       line-height: 1.4;
       display: -webkit-box;
@@ -246,7 +369,7 @@
       justify-content: space-between;
       align-items: center;
       font-size: 11px;
-      color: #666;
+      color: var(--text-secondary);
       flex-wrap: wrap;
       gap: 4px;
     }
@@ -254,7 +377,7 @@
     .video-channel {
       font-weight: 500;
       font-size: 14px;
-      color: #0066cc;
+      color: var(--text-link);
       max-width: 60%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -262,8 +385,28 @@
     }
 
     .video-date {
-      color: #999;
+      color: var(--text-muted);
       white-space: nowrap;
+    }
+
+    .no-videos {
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    
+    .no-videos svg {
+      display: block;
+      margin: 0 auto 16px;
+      width: 120px;
+      height: 120px;
+    }
+    
+    .no-videos-text {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
     }
 
     .video-duration {
@@ -283,19 +426,12 @@
       height: 68px;
     }
 
-    .no-videos {
-      padding: 32px 16px;
-      text-align: center;
-      color: #666;
-      font-style: italic;
-    }
-
     .loading-spinner {
       display: inline-block;
       width: 16px;
       height: 16px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #333;
+      border: 2px solid var(--scrollbar-track);
+      border-top: 2px solid var(--text-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-right: 8px;
@@ -307,149 +443,27 @@
     }
 
     .btn-primary:disabled .loading-spinner {
-      border-top-color: #ccc;
+      border-top-color: var(--text-muted);
     }
 
-    /* Scrollbar styling - Light Theme */
+    /* Scrollbar styling */
     .content::-webkit-scrollbar {
       width: 15px;
     }
 
     .content::-webkit-scrollbar-track {
-      background: #f1f1f1;
+      background: var(--scrollbar-track);
       border-radius: 4px;
     }
 
     .content::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
+      background: var(--scrollbar-thumb);
       border-radius: 4px;
-      border: 2px solid #f1f1f1;
+      border: 2px solid var(--scrollbar-track);
     }
 
     .content::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-
-    /* Scrollbar styling - Dark Theme */
-    .dark-mode .content::-webkit-scrollbar {
-      width: 15px;
-    }
-
-    .dark-mode .content::-webkit-scrollbar-track {
-      background: #2a2a2a;
-      border-radius: 4px;
-    }
-
-    .dark-mode .content::-webkit-scrollbar-thumb {
-      background: #555555;
-      border-radius: 4px;
-      border: 2px solid #2a2a2a;
-    }
-
-    .dark-mode .content::-webkit-scrollbar-thumb:hover {
-      background: #666666;
-    }
-
-    /* Dark Mode Styles */
-    body.dark-mode {
-      background: #1a1a1a;
-      color: #e0e0e0;
-    }
-
-    .header.dark-mode {
-      background: #2d2d2d;
-      color: #e0e0e0;
-    }
-
-    .header.dark-mode h1 {
-      color: #e0e0e0;
-    }
-
-    .video-count.dark-mode {
-      color: #b0b0b0;
-    }
-
-    .filters.dark-mode {
-      background: #2d2d2d;
-      border-bottom: 1px solid #404040;
-    }
-
-    .form-control.dark-mode {
-      background: #3d3d3d;
-      color: #e0e0e0;
-      border: 1px solid #505050;
-    }
-
-    .form-control.dark-mode:focus {
-      border-color: #4d94ff;
-      box-shadow: 0 0 0 2px rgba(77, 148, 255, 0.25);
-    }
-
-    .content.dark-mode {
-      background: #2d2d2d;
-    }
-
-    .video-item.dark-mode {
-      border-bottom: 1px solid #404040;
-      background-color: #2d2d2d;
-    }
-
-    .video-item.dark-mode:hover {
-      background-color: #3a3a3a;
-    }
-
-    .video-title.dark-mode {
-      color: #e0e0e0;
-    }
-
-    .video-meta.dark-mode {
-      color: #b0b0b0;
-    }
-
-    .video-channel.dark-mode {
-      color: #6d9bff;
-    }
-
-    .video-date.dark-mode {
-      color: #888;
-    }
-
-    .no-videos.dark-mode {
-      color: #b0b0b0;
-    }
-
-    .status.dark-mode {
-      background: #3a3a3a;
-      color: #e0e0e0;
-      border-left-color: #4d94ff;
-    }
-
-    .status-success.dark-mode {
-      background: #2d5a3d;
-      color: #e0f0e0;
-      border-left-color: #28a745;
-    }
-
-    .status-error.dark-mode {
-      background: #5a2d2d;
-      color: #f0e0e0;
-      border-left-color: #dc3545;
-    }
-
-    .status-warning.dark-mode {
-      background: #5a522d;
-      color: #f0f0e0;
-      border-left-color: #ffc107;
-    }
-
-    .status-loading.dark-mode {
-      background: #5a522d;
-      color: #f0f0e0;
-      border-left-color: #ffc107;
-    }
-
-    .video-thumbnail.dark-mode {
-      background: #3d3d3d;
+      background: var(--scrollbar-thumb-hover);
     }
 
     .theme-toggle-btn {
@@ -466,11 +480,7 @@
     }
 
     .theme-toggle-btn:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .dark-mode .theme-toggle-btn:hover {
-      background-color: rgba(0, 0, 0, 0.4);
+      background-color: var(--theme-toggle-hover);
     }
 
     .theme-icon {
@@ -491,13 +501,21 @@
     
     <div class="controls">
       <button id="saveBtn" class="btn btn-primary">
-        <span class="btn-text">💾 Save Watch Later List</span>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        <span class="btn-text">Save Videos</span>
       </button>
-      <button id="clearBtn" class="btn btn-danger">🗑️ Clear All</button>
-    </div>
-      <div class="controls">
-      <button id="importBtn" class="btn btn-secondary">🔼 Import JSON</button>
-      <button id="exportBtn" class="btn btn-secondary">🔽 Export JSON</button>
+      <button id="clearBtn" class="btn btn-danger">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        Clear All
+      </button>
+      <button id="importBtn" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 8h14v-2H5z"/></svg>
+        Import
+      </button>
+      <button id="exportBtn" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Export
+      </button>
     </div>
   </div>
 
@@ -506,12 +524,15 @@
 
   <div class="filters">
     <div class="filter-row">
-      <input 
-        type="text" 
-        id="searchInput" 
-        class="form-control" 
-        placeholder="Search videos by title or channel..."
-      >
+      <div class="search-wrapper">
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control search-input"
+          placeholder="Search videos by title or channel..."
+        >
+        <button id="clearSearchBtn" class="search-clear-btn" aria-label="Clear search">×</button>
+      </div>
     </div>
     <div class="filter-row">
       <div class="filter-controls">

@@ -1,15 +1,18 @@
-# Save Youtube Watch Later List
+# YouTube Watch Later List
 
-A Chrome extension to scrape and save your YouTube watch later playlist entries.
+A Chrome extension to scrape, save, and manage your YouTube Watch Later playlist.
 
-![Preview](Preview/Preview.png)
+<img width="599" height="564" alt="Image" src="https://github.com/user-attachments/assets/c1a0c627-b7c8-40ce-8fd8-a2a6db1e866e" />
 
 ## Features
-- Saves video title, channel, upload date, tumbnail and video lenght
-- Overwrites previous saves on each click
-- No YouTube API or authentication required
-- Stores data locally in Chrome storage
-- Sort, filter, export and import list
+- **Scrape & Save** — Extracts video title, channel, upload date, thumbnail, and duration
+- **Auto-scroll** — Automatically scrolls through the playlist to load all videos before scraping
+- **Search** — Filter videos by title or channel name (with debounced input)
+- **Sort and Filter** — Sort by default order, title, channel, newest, or oldest. Filter by all videos, last week, last month, or last year
+- **Dark/Light Theme** — Toggle between light and dark mode; preference is saved locally
+- **Import/Export** — Download your saved list as a JSON file/Load a previously exported JSON
+- **No YouTube API** — No authentication or API keys required
+- **Local Storage** — All data is stored locally in Chrome storage
 
 ## Installation
 1. Clone or download this repository
@@ -19,13 +22,11 @@ A Chrome extension to scrape and save your YouTube watch later playlist entries.
 5. The extension icon should appear in your toolbar
 
 ## Usage
-1. Navigate to your YouTube watch later page: https://www.youtube.com/playlist?list=WL
+1. Navigate to your YouTube Watch Later page: https://www.youtube.com/playlist?list=WL
 2. Click the extension icon in the toolbar
-3. Click "Save Watch Later List" button
+3. Click the **Save Videos** button to scrape your playlist
 4. The popup will show scraping progress and confirmation
-5. Data is saved to local storage; clicking again will overwrite
+5. Subsequent saves will overwrite the previous list
 
-- Access saved data in Chrome DevTools: Go to Application > Storage > Local Storage > chrome-extension://YOUR_ID > key 'watchLater'
-
-## Icon image attribution
+## Icon Image Attribution
 <a href="https://www.flaticon.com/free-icons/playlist" title="playlist icons">Playlist icons created by Xinh Studio - Flaticon</a>

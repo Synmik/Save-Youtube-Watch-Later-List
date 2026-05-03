@@ -15,7 +15,17 @@ const CONFIG = {
   MS_PER_HOUR: 3600000,
   MS_PER_DAY: 86400000,
   MS_PER_WEEK: 604800000,
+  SEARCH_DEBOUNCE_DELAY: 250, // milliseconds
 };
+
+// Debounce utility function
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveBtn');
@@ -24,9 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('status');
   const videoCount = document.getElementById('videoCount');
   const searchInput = document.getElementById('searchInput');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
   const sortSelect = document.getElementById('sortSelect');
   const filterSelect = document.getElementById('filterSelect');
   const themeToggle = document.getElementById('themeToggle');
+
+  // Hide status initially before any status messages are shown
+  status.style.display = 'none';
 
   let allVideos = [];
   let filteredVideos = [];
@@ -39,7 +53,20 @@ document.addEventListener('DOMContentLoaded', () => {
   saveBtn.addEventListener('click', handleSaveClick);
   exportBtn.addEventListener('click', handleExportClick);
   clearBtn.addEventListener('click', handleClearClick);
-  searchInput.addEventListener('input', applyFiltersAndSort);
+  const debouncedSearch = debounce(() => {
+    applyFiltersAndSort();
+  }, CONFIG.SEARCH_DEBOUNCE_DELAY);
+  
+  searchInput.addEventListener('input', () => {
+    clearSearchBtn.classList.toggle('visible', searchInput.value.length > 0);
+    debouncedSearch();
+  });
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearSearchBtn.classList.remove('visible');
+    applyFiltersAndSort();
+    searchInput.focus();
+  });
   sortSelect.addEventListener('change', applyFiltersAndSort);
   filterSelect.addEventListener('change', applyFiltersAndSort);
   themeToggle.addEventListener('click', toggleTheme);
@@ -69,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateThemeIcon(theme);
       updateThemeAriaPressed(theme);
-      applyFiltersAndSort();
     } catch (error) {
       console.error('Error loading theme:', error);
     }
@@ -90,8 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Save theme preference
     chrome.storage.local.set({ 'theme': newTheme });
-    
-    applyFiltersAndSort();
   }
 
   function updateThemeAriaPressed(theme) {
@@ -103,18 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyDarkMode() {
     document.body.classList.add('dark-mode');
-    document.querySelector('.header').classList.add('dark-mode');
-    document.querySelector('.filters').classList.add('dark-mode');
-    document.querySelectorAll('.form-control').forEach(input => input.classList.add('dark-mode'));
-    document.querySelector('.content').classList.add('dark-mode');
   }
 
   function applyLightMode() {
     document.body.classList.remove('dark-mode');
-    document.querySelector('.header').classList.remove('dark-mode');
-    document.querySelector('.filters').classList.remove('dark-mode');
-    document.querySelectorAll('.form-control').forEach(input => input.classList.remove('dark-mode'));
-    document.querySelector('.content').classList.remove('dark-mode');
   }
 
   function updateThemeIcon(theme) {
@@ -240,8 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  status.style.display = 'none';
-  
   function showStatus(message, type = 'info') {
     //console.log('DEBUG: showStatus called with message:', message, 'type:', type);
     status.textContent = message;
@@ -381,16 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       const dataStr = JSON.stringify(exportData, null, 2);
-      
-      // Ensure export structure matches import expectations
-      exportData.videos = exportData.videos.map(video => ({
-        id: video.id,
-        title: video.title,
-        channel: video.channel,
-        date: video.date,
-        ...(video.thumbnail && { thumbnail: video.thumbnail }),
-        ...(video.duration && { duration: video.duration })
-      }));
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       
       const url = URL.createObjectURL(dataBlob);
@@ -438,34 +442,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (videos.length === 0) {
       const noItems = document.createElement('li');
       noItems.className = 'no-videos';
-      noItems.textContent = searchInput.value ? 'No videos match your search' : 'No videos saved';
+      
+      // Empty state SVG icon
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'var(--text-muted)');
+      svg.setAttribute('stroke-width', '1.5');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      
+      // Video/film reel icon
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '2');
+      rect.setAttribute('y', '4');
+      rect.setAttribute('width', '20');
+      rect.setAttribute('height', '16');
+      rect.setAttribute('rx', '2');
+      svg.appendChild(rect);
+      
+      // Play triangle
+      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      polygon.setAttribute('points', '10,8 16,12 10,16');
+      polygon.setAttribute('fill', 'var(--text-muted)');
+      polygon.setAttribute('stroke', 'none');
+      svg.appendChild(polygon);
+      
+      noItems.appendChild(svg);
+      
+      // Text label
+      const textSpan = document.createElement('span');
+      textSpan.className = 'no-videos-text';
+      textSpan.textContent = searchInput.value ? 'No videos match your search' : 'No videos saved';
+      noItems.appendChild(textSpan);
+      
       list.appendChild(noItems);
       return;
     }
 
-    const isDarkMode = document.body.classList.contains('dark-mode') ||
-                      (document.body.style.backgroundColor === 'rgb(26, 26, 26)' ||
-                       document.body.style.backgroundColor === '#1a1a1a');
-
-    videos.forEach((video, index) => {
+    videos.forEach((video) => {
       const li = document.createElement('li');
       li.className = 'video-item';
-      if (isDarkMode) {
-        li.classList.add('dark-mode');
-      }
 
       // Create thumbnail container
       const thumbnailWrapper = document.createElement('div');
       thumbnailWrapper.className = 'thumbnail-wrapper';
-      if (isDarkMode) {
-        thumbnailWrapper.classList.add('dark-mode');
-      }
 
       const thumbnailEl = document.createElement('img');
       thumbnailEl.className = 'video-thumbnail';
-      if (isDarkMode) {
-        thumbnailEl.classList.add('dark-mode');
-      }
       thumbnailEl.src = video.thumbnail || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="68"><rect fill="%23f0f0f0" width="120" height="68"/><text x="50%" y="50%" font-family="Arial" font-size="10" fill="%23999" text-anchor="middle" dy=".3em">No Preview</text></svg>';
       thumbnailEl.alt = video.title;
       thumbnailEl.onerror = () => {
@@ -493,31 +517,19 @@ document.addEventListener('DOMContentLoaded', () => {
       titleEl.href = `https://youtube.com/watch?v=${video.id}`;
       titleEl.target = '_blank';
       titleEl.rel = 'noopener noreferrer';
-      if (isDarkMode) {
-        titleEl.classList.add('dark-mode');
-      }
       videoInfo.appendChild(titleEl);
 
       const metaEl = document.createElement('div');
       metaEl.className = 'video-meta';
-      if (isDarkMode) {
-        metaEl.classList.add('dark-mode');
-      }
       
       const channelEl = document.createElement('span');
       channelEl.className = 'video-channel';
       channelEl.textContent = video.channel;
-      if (isDarkMode) {
-        channelEl.classList.add('dark-mode');
-      }
       metaEl.appendChild(channelEl);
 
       const dateEl = document.createElement('span');
       dateEl.className = 'video-date';
       dateEl.textContent = video.date;
-      if (isDarkMode) {
-        dateEl.classList.add('dark-mode');
-      }
       metaEl.appendChild(dateEl);
 
       videoInfo.appendChild(metaEl);
