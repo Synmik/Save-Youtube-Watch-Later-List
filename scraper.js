@@ -3,7 +3,7 @@
 // Configuration constants
 const CONFIG = {
   MAX_RETRIES: 3,
-  PAGE_LOAD_TIMEOUT: 1000,
+  PAGE_LOAD_TIMEOUT: 5000,
   PAGE_LOAD_POLL_INTERVAL: 500,
   RETRY_BASE_DELAY: 1000,
   NAVIGATION_CHECK_INTERVAL: 1000,
@@ -51,7 +51,7 @@ async function waitForPageLoad(maxWait = CONFIG.PAGE_LOAD_TIMEOUT) {
   while (Date.now() - startTime < maxWait) {
     // Check if playlist videos are loaded
     const videoElements = document.querySelectorAll('ytd-playlist-video-renderer');
-    const loadingIndicators = document.querySelectorAll('[role="progressbar"], .skeleton-loader, ytd-continuation-item-renderer');
+    const loadingIndicators = document.querySelectorAll('[role="progressbar"], .skeleton-loader');
     
     // If we have videos and no loading indicators, consider it loaded
     if (videoElements.length > 0 && loadingIndicators.length === 0) {
@@ -100,60 +100,82 @@ async function scrapeVideosWithRetry(maxRetries = CONFIG.MAX_RETRIES) {
   throw new Error(`Scraping failed after ${maxRetries} attempts: ${lastError.message}`);
 }
 
-async function loadAllPlaylistVideos(maxScrolls = 50, scrollDelay = 400) {
+async function loadAllPlaylistVideos(maxScrolls = 200, scrollDelay = 600) {
   /**
    * Scrolls through the YouTube playlist to trigger loading of all videos.
-   * YouTube uses infinite scrolling — new videos are loaded as you scroll down.
-   * This function scrolls to the bottom, waits for content to load, and repeats
-   * until no new videos are loaded or maxScrolls is reached.
+   * YouTube uses infinite scrolling via IntersectionObserver on a
+   * ytd-continuation-item-renderer element. Scrolling this element into view
+   * triggers YouTube to fetch and render the next batch of videos.
    *
-   * @param {number} maxScrolls - Maximum number of scroll iterations (default 50)
-   * @param {number} scrollDelay - Delay in ms between scrolls to allow rendering (default 400)
+   * @param {number} maxScrolls - Maximum number of scroll iterations (default 200)
+   * @param {number} scrollDelay - Delay in ms between scrolls to allow rendering (default 600)
    * @returns {Promise<void>} Resolves when all videos are loaded
    */
   let previousCount = 0;
   let stagnantIterations = 0;
-  const STAGNANT_THRESHOLD = 3; // Stop if no new videos after this many iterations
+  const STAGNANT_THRESHOLD = 4; // Stop if no new videos after this many iterations
 
   for (let i = 0; i < maxScrolls; i++) {
     const currentCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
 
-    // Scroll to the bottom of the playlist
-    const scrollContainer = document.querySelector('ytd-playlist-renderer, ytd-playlist-video-list-renderer, #content');
-    if (scrollContainer) {
-      scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'auto' });
-    } else {
-      window.scrollTo(0, document.body.scrollHeight);
-    }
+    // --- Strategy 1: Scroll the continuation item into view ---
+    // YouTube uses ytd-continuation-item-renderer as the trigger for lazy loading.
+    // Scrolling it into view reliably triggers YouTube's IntersectionObserver.
+    const continuationItem = document.querySelector('ytd-continuation-item-renderer');
+    if (continuationItem) {
+      continuationItem.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      await delay(scrollDelay);
 
-    // Wait for new videos to render
-    await delay(scrollDelay);
+    // --- Strategy 2: Scroll the playlist container ---
+    } else {
+      const scrollContainer = document.querySelector(
+        'ytd-playlist-video-list-renderer #contents, ' +
+        'ytd-playlist-renderer, ' +
+        '#playlist-panel #contents, ' +
+        '#primary #contents, ' +
+        '#content'
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      } else {
+        window.scrollBy(0, 600);
+      }
+      await delay(scrollDelay);
+    }
 
     const newCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
 
     if (newCount === previousCount) {
       stagnantIterations++;
+      console.log(`No new videos (iteration ${i + 1}, stagnant ${stagnantIterations})`);
+
       if (stagnantIterations >= STAGNANT_THRESHOLD) {
-        console.log(`No new videos loaded after ${stagnantIterations} iterations. All videos loaded.`);
-        break;
+        // One final try: scroll to the very bottom of the page
+        console.log('Stagnant threshold reached. Doing one final scroll to bottom...');
+        window.scrollTo(0, document.body.scrollHeight);
+        await delay(scrollDelay * 2);
+
+        const finalCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
+        if (finalCount === newCount) {
+          console.log(`No more videos to load. Total: ${finalCount}`);
+          break;
+        }
+        // More loaded — reset and continue
+        stagnantIterations = 0;
       }
     } else {
       stagnantIterations = 0;
-      console.log(`Loaded ${newCount} videos (was ${previousCount})`);
+      console.log(`Loaded ${newCount} videos (was ${previousCount}, +${newCount - previousCount})`);
     }
 
     previousCount = newCount;
   }
 
   // Final scroll to top to restore original view
-  const scrollContainer = document.querySelector('ytd-playlist-renderer, ytd-playlist-video-list-renderer, #content');
-  if (scrollContainer) {
-    scrollContainer.scrollTo({ top: 0, behavior: 'auto' });
-  } else {
-    window.scrollTo(0, 0);
-  }
+  window.scrollTo(0, 0);
 
-  console.log(`Total videos loaded: ${document.querySelectorAll('ytd-playlist-video-renderer').length}`);
+  const totalVideos = document.querySelectorAll('ytd-playlist-video-renderer').length;
+  console.log(`Total videos loaded: ${totalVideos}`);
 }
 
 async function scrapeVideos() {
