@@ -79,10 +79,13 @@
 
     body {
       width: 600px;
+      /* Chrome caps extension popups at 600px tall. A fixed height keeps the
+         header/controls/filters/status pinned and lets only .content scroll. */
       height: 600px;
-      min-height: 600px;
       display: grid;
-      grid-template-rows: auto auto auto 1fr;
+      /* minmax(0, 1fr) on the list row lets it shrink below its content size,
+         so overflow is clipped inside .content instead of scrolling the body */
+      grid-template-rows: auto auto auto minmax(0, 1fr);
       padding: 0;
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -330,19 +333,16 @@
       border-bottom: none;
     }
 
+    /* The .video-thumbnail class is applied directly to the <img> inside
+       .thumbnail-wrapper (120x68), so it fills the wrapper while keeping
+       the 120:68 aspect ratio via object-fit. */
     .video-thumbnail {
       flex-shrink: 0;
-      width: 110px;
-      height: 75px;
-      border-radius: 3px;
-      overflow: hidden;
-      background: var(--thumbnail-bg);
-    }
-
-    .video-thumbnail img {
       width: 100%;
       height: 100%;
+      border-radius: 3px;
       object-fit: cover;
+      background: var(--thumbnail-bg);
     }
 
     .video-info {
