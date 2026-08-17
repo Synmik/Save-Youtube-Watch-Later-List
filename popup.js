@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearBtn = document.getElementById('clearBtn');
   const status = document.getElementById('status');
   const videoCount = document.getElementById('videoCount');
+  const totalWatchTime = document.getElementById('totalWatchTime');
+  const lastSaved = document.getElementById('lastSaved');
   const searchInput = document.getElementById('searchInput');
   const clearSearchBtn = document.getElementById('clearSearchBtn');
   const sortSelect = document.getElementById('sortSelect');
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let allVideos = [];
   let filteredVideos = [];
+  let lastSavedAt = null;
 
   // Load and display saved list on popup open
   loadSavedVideos();
@@ -78,8 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadSavedVideos() {
     try {
-      const result = await chrome.storage.local.get(['watchLater']);
+      const result = await chrome.storage.local.get(['watchLater', 'watchLaterSavedAt']);
       allVideos = result.watchLater || [];
+      // Fall back to the newest per-video scrapedAt if no explicit save
+      // timestamp is stored (e.g. older saved data)
+      lastSavedAt = result.watchLaterSavedAt || null;
+      if (!lastSavedAt && allVideos.length > 0) {
+        const scraped = allVideos.map(v => v.scrapedAt).filter(Boolean).sort();
+        lastSavedAt = scraped[scraped.length - 1] || null;
+      }
       updateVideoCount();
       applyFiltersAndSort();
     } catch (error) {
@@ -179,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           // Save to local storage
-          await chrome.storage.local.set({ 'watchLater': videos });
+          lastSavedAt = new Date().toISOString();
+          await chrome.storage.local.set({ 'watchLater': videos, 'watchLaterSavedAt': lastSavedAt });
           allVideos = videos;
           updateVideoCount();
           applyFiltersAndSort();
@@ -313,9 +324,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function parseDurationToSeconds(durationStr) {
+    if (!durationStr || typeof durationStr !== 'string') return 0;
+    const parts = durationStr.trim().split(':').map(p => parseInt(p, 10));
+    if (parts.length < 1 || parts.some(isNaN)) return 0;
+    return parts.reduce((acc, val) => acc * 60 + val, 0);
+  }
+
+  function formatTotalSeconds(total) {
+    if (total <= 0) return '';
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (total < 60) return `${total}s`;
+    return `${minutes}m`;
+  }
+
+  function formatLastSaved(isoString) {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    const options = { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' };
+    return date.toLocaleString([], options);
+  }
+
   function updateVideoCount() {
     const count = allVideos.length;
     videoCount.textContent = count > 0 ? `${count} videos saved` : 'No videos saved';
+
+    // Total watch time across all saved videos
+    const totalSeconds = allVideos.reduce((sum, video) => sum + parseDurationToSeconds(video.duration), 0);
+    const totalTime = formatTotalSeconds(totalSeconds);
+    totalWatchTime.textContent = totalTime ? `⏱ ${totalTime} total` : '';
+    totalWatchTime.title = totalTime ? `Total watch time: ${totalTime}` : '';
+
+    // Last saved timestamp
+    const savedLabel = count > 0 && lastSavedAt ? formatLastSaved(lastSavedAt) : '';
+    lastSaved.textContent = savedLabel ? `• Last saved: ${savedLabel}` : '';
   }
 
   function applyFiltersAndSort() {
@@ -457,8 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirm(`Are you sure you want to clear all ${allVideos.length} saved videos? This action cannot be undone.`)) {
       try {
-        await chrome.storage.local.remove('watchLater');
+        await chrome.storage.local.remove(['watchLater', 'watchLaterSavedAt']);
         allVideos = [];
+        lastSavedAt = null;
         updateVideoCount();
         applyFiltersAndSort();
         showStatus('All videos cleared successfully', 'success');
@@ -603,7 +648,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update state and UI
         allVideos = data.videos;
-        await chrome.storage.local.set({ 'watchLater': allVideos });
+        lastSavedAt = new Date().toISOString();
+        await chrome.storage.local.set({ 'watchLater': allVideos, 'watchLaterSavedAt': lastSavedAt });
         updateVideoCount();
         applyFiltersAndSort();
         showStatus(`Successfully imported ${data.videos.length} videos!`, 'success');

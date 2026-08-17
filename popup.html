@@ -117,11 +117,19 @@
       text-align: center;
     }
 
+    .video-count-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
     .video-count {
       text-align: center;
       font-size: 14px;
       color: var(--text-secondary);
-      margin-bottom: 8px;
     }
 
     .controls {
@@ -499,7 +507,11 @@
         <span class="theme-icon">🌙</span>
       </button>
     </div>
-    <div id="videoCount" class="video-count">Loading...</div>
+    <div class="video-count-row">
+      <span id="videoCount" class="video-count">Loading...</span>
+      <span id="totalWatchTime" class="video-count"></span>
+      <span id="lastSaved" class="video-count"></span>
+    </div>
     
     <div class="controls">
       <button id="saveBtn" class="btn btn-primary">
