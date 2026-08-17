@@ -143,52 +143,53 @@ document.addEventListener('DOMContentLoaded', () => {
   async function handleSaveClick() {
     const maxRetries = CONFIG.MAX_RETRIES;
     let attempt = 0;
-    
-    while (attempt < maxRetries) {
-      try {
+
+    try {
+      while (attempt < maxRetries) {
         attempt++;
         showStatus(`Scraping watch later list... (Attempt ${attempt}/${maxRetries})`, 'loading');
         saveBtn.disabled = true;
 
-        // Get active tab with timeout
-        const tab = await getActiveTabWithTimeout(CONFIG.TAB_QUERY_TIMEOUT);
-        validateTab(tab);
+        try {
+          // Get active tab with timeout
+          const tab = await getActiveTabWithTimeout(CONFIG.TAB_QUERY_TIMEOUT);
+          validateTab(tab);
 
-        // Send message to content script with timeout
-        const response = await sendMessageToTabWithTimeout(tab.id, { action: 'scrape' }, CONFIG.SCRAPE_MESSAGE_TIMEOUT);
-        validateScrapingResponse(response);
+          // Send message to content script with timeout
+          const response = await sendMessageToTabWithTimeout(tab.id, { action: 'scrape' }, CONFIG.SCRAPE_MESSAGE_TIMEOUT);
+          validateScrapingResponse(response);
 
-        const { videos } = response;
-        if (videos.length === 0) {
-          showStatus('No videos found in watch later list. The page might still be loading.', 'warning');
-          if (attempt < maxRetries) {
-            await delay(CONFIG.RETRY_DELAY_EMPTY);
-            continue;
+          const { videos } = response;
+          if (videos.length === 0) {
+            showStatus('No videos found in watch later list. The page might still be loading.', 'warning');
+            if (attempt < maxRetries) {
+              await delay(CONFIG.RETRY_DELAY_EMPTY);
+              continue;
+            }
+            return;
           }
+
+          // Save to local storage
+          await chrome.storage.local.set({ 'watchLater': videos });
+          allVideos = videos;
+          updateVideoCount();
+          applyFiltersAndSort();
+          showStatus(`Successfully saved ${videos.length} videos!`, 'success');
           return;
-        }
+        } catch (error) {
+          console.error(`Attempt ${attempt} failed:`, error);
 
-        // Save to local storage
-        await chrome.storage.local.set({ 'watchLater': videos });
-        allVideos = videos;
-        updateVideoCount();
-        applyFiltersAndSort();
-        showStatus(`Successfully saved ${videos.length} videos!`, 'success');
-        return;
-
-      } catch (error) {
-        console.error(`Attempt ${attempt} failed:`, error);
-        
-        if (attempt === maxRetries) {
-          showStatus(`Failed after ${maxRetries} attempts: ${error.message}`, 'error');
-        } else {
-          showStatus(`Attempt ${attempt} failed, retrying... (${error.message})`, 'warning');
-          await delay(CONFIG.RETRY_DELAY_ERROR);
+          if (attempt === maxRetries) {
+            showStatus(`Failed after ${maxRetries} attempts: ${error.message}`, 'error');
+          } else {
+            showStatus(`Attempt ${attempt} failed, retrying... (${error.message})`, 'warning');
+            await delay(CONFIG.RETRY_DELAY_ERROR);
+          }
         }
       }
+    } finally {
+      saveBtn.disabled = false;
     }
-    
-    saveBtn.disabled = false;
   }
 
   function validateTab(tab) {
