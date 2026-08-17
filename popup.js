@@ -4,7 +4,10 @@
 const CONFIG = {
   MAX_RETRIES: 3,
   TAB_QUERY_TIMEOUT: 5000,
-  SCRAPE_MESSAGE_TIMEOUT: 10000,
+  // Timeout for receiving NO response AND no progress updates. The content
+  // script sends progress messages (heartbeats) while scrolling, which reset
+  // this timer — so large playlists no longer time out after 10s.
+  SCRAPE_PROGRESS_TIMEOUT: 15000,
   RETRY_DELAY_EMPTY: 2000,
   RETRY_DELAY_ERROR: 1000,
   STATUS_AUTO_CLEAR_DELAY: 5000,
@@ -155,8 +158,14 @@ document.addEventListener('DOMContentLoaded', () => {
           const tab = await getActiveTabWithTimeout(CONFIG.TAB_QUERY_TIMEOUT);
           validateTab(tab);
 
-          // Send message to content script with timeout
-          const response = await sendMessageToTabWithTimeout(tab.id, { action: 'scrape' }, CONFIG.SCRAPE_MESSAGE_TIMEOUT);
+          // Send message to content script; progress updates reset the timeout
+          // and keep the status bar live during long scrapes
+          const response = await sendMessageToTabWithTimeout(
+            tab.id,
+            { action: 'scrape' },
+            CONFIG.SCRAPE_PROGRESS_TIMEOUT,
+            handleScrapeProgress
+          );
           validateScrapingResponse(response);
 
           const { videos } = response;
@@ -236,14 +245,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function sendMessageToTabWithTimeout(tabId, message, timeout = 10000) {
+  function sendMessageToTabWithTimeout(tabId, message, timeout = 15000, onProgress = null) {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error('Timeout: Page took too long to respond. Try refreshing the page.'));
-      }, timeout);
+      let timer;
+
+      const armTimer = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          reject(new Error('Timeout: Page took too long to respond. Try refreshing the page.'));
+        }, timeout);
+      };
+
+      // Progress heartbeats from the content script reset the timeout
+      const progressListener = (msg) => {
+        if (msg && msg.action === 'scrapeProgress') {
+          armTimer();
+          if (onProgress) onProgress(msg);
+        }
+      };
+
+      armTimer();
+      chrome.runtime.onMessage.addListener(progressListener);
 
       chrome.tabs.sendMessage(tabId, message, (response) => {
         clearTimeout(timer);
+        chrome.runtime.onMessage.removeListener(progressListener);
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
         } else {
@@ -251,6 +277,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+  }
+
+  function handleScrapeProgress(progress) {
+    if (progress.phase === 'loading') {
+      showStatus(`Loading videos... ${progress.count} found (scroll ${progress.iteration}/${progress.maxIterations})`, 'loading');
+    } else if (progress.phase === 'extracting') {
+      showStatus(`Extracting data from ${progress.count} videos...`, 'loading');
+    }
   }
 
   function delay(ms) {

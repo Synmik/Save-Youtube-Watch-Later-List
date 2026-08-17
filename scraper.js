@@ -115,6 +115,8 @@ async function loadAllPlaylistVideos(maxScrolls = 200, scrollDelay = 600) {
   let stagnantIterations = 0;
   const STAGNANT_THRESHOLD = 4; // Stop if no new videos after this many iterations
 
+  reportProgress({ phase: 'loading', count: 0, iteration: 0, maxIterations: maxScrolls });
+
   for (let i = 0; i < maxScrolls; i++) {
     const currentCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
 
@@ -144,6 +146,10 @@ async function loadAllPlaylistVideos(maxScrolls = 200, scrollDelay = 600) {
     }
 
     const newCount = document.querySelectorAll('ytd-playlist-video-renderer').length;
+
+    // Report progress to the popup (also acts as a heartbeat so the
+    // popup doesn't time out while scrolling large playlists)
+    reportProgress({ phase: 'loading', count: newCount, iteration: i + 1, maxIterations: maxScrolls });
 
     if (newCount === previousCount) {
       stagnantIterations++;
@@ -186,6 +192,8 @@ async function scrapeVideos() {
   await loadAllPlaylistVideos();
 
   const videoElements = document.querySelectorAll('ytd-playlist-video-renderer');
+
+  reportProgress({ phase: 'extracting', count: videoElements.length });
 
   if (videoElements.length === 0) {
     throw new Error('No video elements found. The page might still be loading.');
@@ -320,6 +328,19 @@ function extractVideoId(url) {
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Send progress updates to the popup. Failures are harmless: the popup may be
+// closed (no listener) or the extension context may be invalidated.
+function reportProgress(payload) {
+  try {
+    const result = chrome.runtime.sendMessage({ action: 'scrapeProgress', ...payload });
+    if (result && typeof result.catch === 'function') {
+      result.catch(() => {});
+    }
+  } catch (error) {
+    // Ignore — progress reporting must never break scraping
+  }
 }
 
 // Add error reporting for better debugging
