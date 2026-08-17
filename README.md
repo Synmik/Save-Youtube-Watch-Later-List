@@ -28,5 +28,12 @@ A Chrome extension to scrape, save, and manage your YouTube Watch Later playlist
 4. The popup will show scraping progress and confirmation
 5. Subsequent saves will overwrite the previous list
 
+## Permissions
+| Permission | Why it's needed |
+| --- | --- |
+| `storage` | Stores your saved video list, the last-saved timestamp, and theme preference locally in Chrome. |
+| `activeTab` | Granted when you click the extension icon, so the popup can read the active tab's URL to verify you're on the Watch Later page (`…/playlist?list=WL`) and send it the scrape request. No access to other tabs or history. |
+| `https://www.youtube.com/*` | Lets the content script (`scraper.js`) run on YouTube pages to read the page's own data (`ytInitialData` and the page's continuation responses) and receive messages from the popup. Limited to `www.youtube.com` only. |
+
 ## Icon Image Attribution
 <a href="https://www.flaticon.com/free-icons/playlist" title="playlist icons">Playlist icons created by Xinh Studio - Flaticon</a>

@@ -3,7 +3,7 @@
   "name": "YouTube Watch Later List",
   "version": "0.9.9",
   "description": "Save, export, and manage your YouTube watch later list",
-  "permissions": ["storage", "tabs", "activeTab"],
+  "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://www.youtube.com/*"
   ],

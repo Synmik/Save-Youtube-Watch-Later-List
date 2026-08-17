@@ -771,27 +771,3 @@ function extractJsonValue(source, marker) {
   return null;
 }
 
-// Add error reporting for better debugging
-window.addEventListener('error', (event) => {
-  console.error('Page error that might affect scraping:', event.error);
-});
-
-// Monitor for YouTube navigation changes using MutationObserver (efficient, event-driven)
-// YouTube updates the document title on navigation, so we observe <head> changes
-const titleObserver = new MutationObserver((mutations) => {
-  for (const mutation of mutations) {
-    if (mutation.type === 'childList' || mutation.type === 'characterData') {
-      console.log('YouTube navigation detected:', window.location.href);
-    }
-  }
-});
-titleObserver.observe(document.head || document.documentElement, {
-  childList: true,
-  subtree: true,
-  characterData: true
-});
-
-// Also listen for popstate (SPA navigation via back/forward buttons)
-window.addEventListener('popstate', () => {
-  console.log('YouTube SPA navigation (popstate):', window.location.href);
-});

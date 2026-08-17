@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       videos = videos.filter(video => {
-        const videoDate = parseVideoDate(video.date);
+        const videoDate = getVideoDate(video);
         return videoDate >= cutoffDate;
       });
     }
@@ -408,10 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
         videos.sort((a, b) => a.channel.localeCompare(b.channel));
         break;
       case 'date-new':
-        videos.sort((a, b) => parseVideoDate(b.date) - parseVideoDate(a.date));
+        videos.sort((a, b) => getVideoDate(b) - getVideoDate(a));
         break;
       case 'date-old':
-        videos.sort((a, b) => parseVideoDate(a.date) - parseVideoDate(b.date));
+        videos.sort((a, b) => getVideoDate(a) - getVideoDate(b));
         break;
     }
 
@@ -419,9 +419,34 @@ document.addEventListener('DOMContentLoaded', () => {
     displayList(filteredVideos);
   }
 
+  /**
+   * Resolve a video's date. Prefers dateISO (a timestamp captured at scrape
+   * time, so filters stay accurate as the saved list ages). Falls back to
+   * re-parsing the relative display string for older saves / imports.
+   */
+  function getVideoDate(video) {
+    if (video.dateISO) {
+      const d = new Date(video.dateISO);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return parseVideoDate(video.date);
+  }
+
   function parseVideoDate(dateStr) {
     // Handle various YouTube date formats
     const now = new Date();
+    const lower = dateStr.toLowerCase();
+    if (lower.includes('just now')) {
+      return new Date(now.getTime() - CONFIG.MS_PER_MINUTE);
+    }
+    if (lower.includes('yesterday')) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      return d;
+    }
+    if (lower.includes('today')) {
+      return new Date(now);
+    }
     if (dateStr.includes('ago')) {
       if (dateStr.includes('minute')) {
         const minutes = parseInt(dateStr.match(/\d+/)?.[0] || '0');
