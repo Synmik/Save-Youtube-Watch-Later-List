@@ -280,8 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleScrapeProgress(progress) {
-    if (progress.phase === 'loading') {
-      showStatus(`Loading videos... ${progress.count} found (scroll ${progress.iteration}/${progress.maxIterations})`, 'loading');
+    if (progress.phase === 'fetching') {
+      showStatus(`Loading videos... ${progress.count} found`, 'loading');
     } else if (progress.phase === 'extracting') {
       showStatus(`Extracting data from ${progress.count} videos...`, 'loading');
     }
